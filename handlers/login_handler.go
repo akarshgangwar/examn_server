@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	// "fmt"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -33,7 +33,18 @@ func LoginHandler(c *gin.Context,db *gorm.DB){
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username or Email is required"})
 		return
 	}
+	var dbUser LoginRequest
+	fmt.Println(req.Email)
+	db = db.Debug()
+	if err := db.Table("students").Where("email = ?", req.Email).First(&dbUser).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
 
+	if req.Password != dbUser.Password {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
 	// if creadential is correct
 	accessToken, refreshToken, err := GenerateTokens(req.Email,req.Username)
 	if err != nil {
